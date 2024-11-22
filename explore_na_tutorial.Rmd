@@ -1,7 +1,7 @@
 ---
-title: "Exploring missing values in naniar"
-author: "Allison Horst"
-date: "2020-05-19"
+title: "Eksploracja brakujących danych"
+author: "Karol Flisikowski"
+date: "`r Sys.Date()`"
 output: 
   learnr::tutorial:
     css: css/custom_css.css
@@ -50,103 +50,103 @@ deer_mouse <- kp_rodents %>%
 
 ```
 
-## 1. Introduction
+## 1. Wprowadzenie
 
 ```{r, echo=FALSE, out.width="100%", fig.align = "center"}
 knitr::include_graphics("images/naniar.jpg")  
 ```
 
-Missing values\*, indicated by (or coerced to) `NA` in *R*, are common in environmental data due to equipment malfunction, survey non-response, human error, resource limitations, and any number of other unforeseen hiccups that can occur during data collection. Despite their ubiquity, `NA`s are rarely considered in exploratory data analysis, and are commonly "dealt with" (read: disappeared) by listwise deletion. Listwise deletion (in which any row with an `NA` is removed) *may* be the best method for handling missings, but also omits valuable existing observations, reduces statistical power, and depending on the mechanism of missingness can increase bias in parameter estimates. Exploring and thinking critically about missing data is an important and often overlooked part of exploratory data analysis that can help us to understand **what** data are missing and **why**, so that we choose an appropriate method for handling them. 
+Brakujące wartości, wskazywane przez (lub wymuszone) `NA` w *R*, są powszechne w danych środowiskowych z powodu awarii sprzętu, braku odpowiedzi na ankietę, błędu ludzkiego, ograniczeń zasobów i dowolnej liczby innych nieprzewidzianych czkawek, które mogą wystąpić podczas gromadzenia danych. Pomimo ich wszechobecności, `NA` są rzadko brane pod uwagę w eksploracyjnej analizie danych i są powszechnie „rozwiązywane” (czytaj: znikają) poprzez usuwanie z listy. Usuwanie z listy (w którym każdy wiersz z `NA` jest usuwany) *może* być najlepszą metodą radzenia sobie z brakami, ale także pomija cenne istniejące obserwacje, zmniejsza moc statystyczną i w zależności od mechanizmu braku może zwiększyć błąd w szacunkach parametrów. Odkrywanie i krytyczne myślenie o brakujących danych jest ważną i często pomijaną częścią eksploracyjnej analizy danych, która może pomóc nam zrozumieć **jakich** danych brakuje i **dlaczego**, abyśmy mogli wybrać odpowiednią metodę ich obsługi.
 
-But **how do we explore and visualize data that don't exist?** 
+Ale **jak eksplorować i wizualizować dane, które nie istnieją? 
 
-In this tutorial, we will move beyond `is.na()` to learn other useful tools and approaches for exploring and visualizing missing values with helpful functions in the [`naniar`](https://github.com/njtierney/naniar) package by Dr. Nick Tierney. 
+W tym samouczku wyjdziemy poza `is.na()`, aby poznać inne przydatne narzędzia i podejścia do eksploracji i wizualizacji brakujących wartości za pomocą pomocnych funkcji z pakietu [`naniar`](https://github.com/njtierney/naniar) autorstwa dr Nicka Tierneya. 
 
-\**Here, I use "missing values" to describe any missing data record (`NA`), which can be any type (e.g. character, date, etc.) and does not imply only numeric data.*
+\**Tutaj używam „brakujących wartości” do opisania dowolnego brakującego rekordu danych (`NA`), który może być dowolnego typu (np. znak, data itp.) i nie oznacza tylko danych liczbowych.
 
-### Working through this tutorial
+### Praca z tym tutorialem
 
-Throughout the tutorial, you will see code examples, coding exercises, and critical thinking questions. Code examples and exercises assume basic understanding of R, functions, arguments, and the pipe operator. You do **not** need to have R or RStudio installed to run code in this tutorial.  
+W całym samouczku znajdziesz przykłady kodu, ćwiczenia kodowania i pytania dotyczące krytycznego myślenia. Przykłady kodu i ćwiczenia zakładają podstawową znajomość języka R, funkcji, argumentów i operatora potoku. Aby uruchomić kod w tym samouczku, **nie** trzeba mieć zainstalowanego R lub RStudio. 
 
-#### `r fa("fas fa-robot", fill = "orange")` = Example code
+#### `r fa("fas fa-robot", fill = "orange")` = Przykładowy kod
 
-Look for the helper robot icon for code examples throughout the tutorial. The examples contain pre-written, working code for you to explore and run by pressing the orange 'Run' button in the upper right. 
+W całym samouczku szukaj ikony robota pomocniczego, aby zobaczyć przykłady kodu. Przykłady zawierają wstępnie napisany, działający kod, który można zbadać i uruchomić, naciskając pomarańczowy przycisk „Uruchom” w prawym górnym rogu. 
 
-Don't worry - **you can't break the example code.** If you update code in any of the examples and get an error message, just press 'Start Over' in the upper left and the code will automatically reset to the default!
+Nie martw się - **nie możesz zepsuć przykładowego kodu**. Jeśli zaktualizujesz kod w którymkolwiek z przykładów i pojawi się komunikat o błędzie, po prostu naciśnij „Start Over” w lewym górnym rogu, a kod zostanie automatycznie zresetowany do domyślnego!
 
 ```{r, echo=FALSE, out.width="90%", fig.align = "center"}
 knitr::include_graphics("images/code_chunk_key.png")  
 ```
 
-#### `r fa("fas fa-keyboard", fill = "orange")` = Coding exercises
+#### `r fa("fas fa-keyboard", fill = "orange")` = Ćwiczenia z kodowania
 
-The orange keyboard icon indicates practice coding exercises where you'll be asked to type in code manually to explore missing observations in the data. If you get stuck, click on the 'Solution' or 'Hint' button! 
+Pomarańczowa ikona klawiatury wskazuje ćwiczenia kodowania, w których zostaniesz poproszony o ręczne wpisanie kodu w celu zbadania brakujących obserwacji w danych. Jeśli utkniesz, kliknij przycisk „Rozwiązanie” lub „Podpowiedź”!
 
 ```{r, echo=FALSE, out.width="90%", fig.align = "center"}
 knitr::include_graphics("images/code_exercise_key.png")  
 ```
 
-#### `r fa("brain", fill = "orange")` = Thinking questions
+#### `r fa("brain", fill = "orange")` = Pytania do przemyślenia
 
-The brain icon indicates questions for you to think about and answer. For some, there is not a right or wrong answer. There may be *many* right answers. Many of the thinking questions will refer to a coding example or exercise - in those cases make sure to run the relevant code so that you can see the output needed to answer the questions.
+Ikona mózgu wskazuje pytania do przemyślenia i udzielenia odpowiedzi. W przypadku niektórych z nich nie ma dobrej lub złej odpowiedzi. Może być *wiele* poprawnych odpowiedzi. Wiele z pytań dotyczących myślenia odnosi się do przykładu kodowania lub ćwiczenia - w takich przypadkach należy uruchomić odpowiedni kod, aby zobaczyć dane wyjściowe potrzebne do udzielenia odpowiedzi na pytania.
 
 
-**NOTE:** *There are many ways to explore `NA` values in R. This tutorial introduces `naniar` functions that I find really useful. It is not comprehensive.*
+**UWAGA:* *Istnieje wiele sposobów na zbadanie wartości `NA` w R. Ten samouczek wprowadza funkcje `naniar`, które uważam za naprawdę przydatne. Nie jest on wyczerpujący.
 
-OK, you're all set to start with this tutorial! Click below to meet the data we'll use in this tutorial! 
+OK, wszystko gotowe do rozpoczęcia tego samouczka! Kliknij poniżej, aby poznać dane, których będziemy używać w tym samouczku!
 
-## 2. Meet the data
+## 2. Poznaj dane
 
 ```{r, echo=FALSE, out.width="55%", fig.align = "center"}
 knitr::include_graphics("images/meet_data.jpg")  
 ```
 
-In this tutorial, we'll explore missing values in rodent size measurements generously made available by Andrew Hope and the [Konza Prairie Long Term Ecological Research Program](http://lter.konza.ksu.edu/konza-prairie-long-term-ecological-research-lter). 
+W tym samouczku zbadamy brakujące wartości w pomiarach wielkości gryzoni hojnie udostępnionych przez Andrew Hope'a i [Konza Prairie Long Term Ecological Research Program] (http://lter.konza.ksu.edu/konza-prairie-long-term-ecological-research-lter).
 
-From the Konza Prairie LTER [website](http://lter.konza.ksu.edu/konza-prairie-long-term-ecological-research-lter): "Konza Prairie Biological Station (KPBS) is located on a 3,487 hectare native tallgrass prairie preserve jointly owned by The Nature Conservancy and Kansas State University. The KPBS is located in the Flint Hills of northeastern Kansas (39°05’ N, 96°35’ W), a grassland region of steep-slopes overlain by shallow limestone soils unsuitable for cultivation."
+Ze strony internetowej Konza Prairie LTER [http://lter.konza.ksu.edu/konza-prairie-long-term-ecological-research-lter]: „Stacja Biologiczna Konza Prairie (KPBS) znajduje się na 3 487 hektarach rodzimej prerii wysokiej trawy, będącej wspólną własnością The Nature Conservancy i Kansas State University. KPBS znajduje się w Flint Hills w północno-wschodnim Kansas (39°05' N, 96°35' W), regionie użytków zielonych o stromych zboczach pokrytych płytkimi glebami wapiennymi nienadającymi się do uprawy”.
 
-Konza Prairie Biological Station is on traditional land of the Kaw (Kanza; natively "kką:ze") People, for which the site and the state of Kansas are named. [Click here](https://kawnation.com/) to learn more about the Kaw Nation.  
+Stacja Biologiczna Konza Prairie znajduje się na tradycyjnej ziemi ludu Kaw (Kanza; natywnie „kką:ze”), od którego pochodzi nazwa tego miejsca i stanu Kansas. [Kliknij tutaj](https://kawnation.com/), aby dowiedzieć się więcej o narodzie Kaw.
 
 ```{r, echo=FALSE, out.width="100%", fig.align = "center", fig.cap = "Konza Prairie LTER. Photo: [Konza Prairie LTER Image Gallery](https://lternet.edu/site/konza-prairie-lter/)."}
 knitr::include_graphics("images/konza.jpg")  
 ```
 
-### Data overview: 
+### Przegląd danych
 
-**Data disclaimer:** This tutorial works with a simplified subset of the original KP LTER data and is only meant as sample data to learn tools for exploring and considering missing values. It should not be used to draw conclusions about relationships, as important variables about location, transect, disposition, and more are excluded. Refer to the original data, metadata and related publications for more information.  Click [HERE](http://lter.konza.ksu.edu/content/csm08-small-mammal-host-parasite-sampling-data-16-linear-trapping-transects-located-8-lter) to access original data and metadata.
+**Zastrzeżenie dotyczące danych:** Ten samouczek działa z uproszczonym podzbiorem oryginalnych danych KP LTER i jest przeznaczony wyłącznie jako przykładowe dane do nauki narzędzi do eksploracji i uwzględniania brakujących wartości. Nie należy go używać do wyciągania wniosków na temat relacji, ponieważ ważne zmienne dotyczące lokalizacji, transektu, dyspozycji i innych są wykluczone. Więcej informacji można znaleźć w oryginalnych danych, metadanych i powiązanych publikacjach. Kliknij [TUTAJ](http://lter.konza.ksu.edu/content/csm08-small-mammal-host-parasite-sampling-data-16-linear-trapping-transects-located-8-lter), aby uzyskać dostęp do oryginalnych danych i metadanych.
 
-**Data citation:** Hope A. 2019. CSM08 Small mammal host-parasite sampling data for 16 linear trapping transects located in 8 LTER burn treatment watersheds at Konza Prairie. Environmental Data Initiative. https://doi.org/10.6073/pasta/69109c56fcf21a30a8d37369cb47f8de. Dataset accessed 5/01/2020.
+**Cytowanie danych:** Hope A. 2019. CSM08 Dane dotyczące pobierania próbek żywicieli-pasożytów małych ssaków dla 16 liniowych transektów pułapkowych zlokalizowanych w 8 zlewniach LTER w Konza Prairie. Environmental Data Initiative. https://doi.org/10.6073/pasta/69109c56fcf21a30a8d37369cb47f8de. Dostęp do zbioru danych 5/01/2020.
 
-The subset has been simplified to 4 rodent species and 9 variables (see metadata at citation link above for more details and collection methods).
+Podzbiór został uproszczony do 4 gatunków gryzoni i 9 zmiennych (więcej szczegółów i metod zbierania danych można znaleźć w metadanych pod linkiem do cytatu powyżej).
 
-**Species:**
+**Gatunki:**
 
-Our subset contains the four most commonly observed rodent species in the study: cotton rat (n = `r kp_counts$n[1]`), white-footed mouse (n = `r kp_counts$n[2]`), deer mouse (n = `r kp_counts$n[3]`), and prairie vole (n = `r kp_counts$n[4]`). They are all very cute. 
+Nasz podzbiór zawiera cztery najczęściej obserwowane gatunki gryzoni w badaniu: szczur bawełniany (n = `r kp_counts$n[1]`), mysz białonoga (n = `r kp_counts$n[2]`), mysz jelenia (n = `r kp_counts$n[3]`) i nornica preriowa (n = `r kp_counts$n[4]`). Wszystkie są bardzo urocze.
 
-```{r, echo=FALSE, out.width="100%", fig.align = "center", fig.cap = "Teaching assistants."}
+```{r, echo=FALSE, out.width="100%", fig.align = "center"}
 knitr::include_graphics("images/rodents.jpg")  
 ```
 
-**Variables:**
+**Zmienne:**
 
-- `date`: measurement date
-- `common_name`: species common name
-- `total_length`: total length from "tip of nose to tip of tail" (millimeters)
-- `tail_length`: length from base to tip of tail (millimeters)
-- `hf_length`: hind foot length "from heel to tip of longest toe nail on left hind foot" (millimeters)
-- `ear_length`: ear length "from ear notch to furthest edge of pinna" (millimeters)
-- `weight`: full body mass (grams)
-- `sex`: sex (m/f)
-- `age`: age descriptor ("a" = adult, "juv" = juvenile, "sa" = youth adult)
+- `date`: data pomiaru
+- `common_name`: nazwa zwyczajowa gatunku
+- `total_length`: całkowita długość od „czubka nosa do czubka ogona” (milimetry)
+- `tail_length`: długość od nasady do końca ogona (milimetry)
+- `hf_length`: długość tylnej łapy „od pięty do końca najdłuższego paznokcia na lewej tylnej łapie” (milimetry)
+- `ear_length`: długość ucha „od nacięcia ucha do najdalszej krawędzi małżowiny usznej” (milimetry)
+- `weight`: masa całego ciała (gramy)
+- `sex`: płeć (m/k)
+- `age`: deskryptor wieku („a” = dorosły, „juv” = młodociany, „sa” = młody dorosły)
 
-### General data structure:
+### Struktura danych
 
-Our data table (commonly called a **tibble** or **data frame** in *R*) is pre-imported and already in tidy format, meaning that it is rectangular and: 
+Nasza tabela danych (powszechnie nazywana **tablicą** lub **ramką danych** w *R*) jest wstępnie zaimportowana i już w uporządkowanym formacie, co oznacza, że jest prostokątna: 
 
-- Each variable is a column
-- Each observation is a row
+- każda zmienna jest kolumną
+- Każda obserwacja to wiersz
 
-Here is a glimpse of 10 lines from the data (out of 971 total observations):
+Oto rzut oka na 10 wierszy z danych (z 971 wszystkich obserwacji):
 
 ```{r, echo = FALSE}
 kp_rodents %>% 
@@ -155,63 +155,64 @@ kp_rodents %>%
   kable_styling(full_width = FALSE,
                 bootstrap_options = "striped")
 ```
-Lo and behold, we see that there are missing values (`NA`s) in our data. Good thing, otherwise this would be a pretty useless tutorial. 
 
-It's important that we explore the frequency and structure of our missing values in our data, but **how do we explore what's not there**? A good place is to count `NA`s, by variable and group. 
+Oto widzimy, że w naszych danych występują brakujące wartości (`NA`). Dobrze, bo w przeciwnym razie byłby to całkiem bezużyteczny samouczek. 
 
-Walk toward the wardrobe, move on to the next section to enter `naniar`!
+Ważne jest, abyśmy zbadali częstotliwość i strukturę brakujących wartości w naszych danych, ale **jak zbadać to, czego tam nie ma**? Dobrym miejscem jest policzenie `NA`, według zmiennej i grupy. 
+
+Idź w kierunku szafy, przejdź do następnej sekcji, aby wprowadzić `naniar`!
 
 ```{r, echo=FALSE, out.width="55%", fig.align = "center"}
 knitr::include_graphics("images/wardrobe.jpg")  
 ```
 
-## 3. Initial NA counts & proportions
+## 3. Początkowa liczba i proporcje NA
 
 ```{r, echo=FALSE, out.width="55%", fig.align = "center"}
 knitr::include_graphics("images/count_na.jpg")  
 ```
 
-First, we'll use a few `naniar` functions to get basic counts of `NA` values by variable and groups in our data frame. The [`naniar` package](https://cran.r-project.org/web/packages/naniar/vignettes/getting-started-w-naniar.html) was created by [Dr. Nick Tierney](https://images.njtierney.com/) to help us explore and analyze `NA`s. 
+Najpierw użyjemy kilku funkcji `naniar`, aby uzyskać podstawowe zliczenia wartości `NA` według zmiennych i grup w naszej ramce danych. Pakiet [`naniar`](https://cran.r-project.org/web/packages/naniar/vignettes/getting-started-w-naniar.html) został stworzony przez [dr Nicka Tierneya](https://images.njtierney.com/), aby pomóc nam odkrywać i analizować `NA`. 
 
-Here is a fun explanation of the package name, from Dr. Tierney: "Well, I think it is useful to think of missing values in data being like this other dimension, perhaps like Narnia - a different world, hidden away. Close, but very different. So the name, "naniar", is a play on the "Narnia" books. e.g., naniar: The Last Battle (...with missing data). Also, NAniar, naniar = na in r, and if you so desire, naniar may sound like "noneoya" in an nz/aussie accent."
+Oto zabawne wyjaśnienie nazwy pakietu od dr Tierneya: „Cóż, myślę, że warto myśleć o brakujących wartościach w danych jako o innym wymiarze, być może jak Narnia - inny świat, ukryty. Bliski, ale bardzo odmienny. Tak więc nazwa „naniar” jest grą na książkach „Narnia”, np. naniar: Ostatnia Bitwa (...z brakującymi danymi). Ponadto, NAniar, naniar = na w r, a jeśli chcesz, naniar może brzmieć jak „noneoya” z akcentem nz/aussie.”
 
-#### What we'll learn in this section
+#### Czego dowiemy się w tej sekcji
 
-For our first steps into `naniar`, we'll use several functions to get quick counts and proportions of `NA`s in a data frame or column: 
+W naszych pierwszych krokach w `naniar`, użyjemy kilku funkcji, aby uzyskać szybkie zliczenia i proporcje `NA` w ramce danych lub kolumnie: 
 
-- `n_miss()`: Returns `NA` count in your data frame or column
-- `n_complete()`: Returns number of complete values
-- `prop_miss()` and `pct_miss()`: Proportion or percentage of values that are `NA`
-- `miss_var_summary()`: A summary table of `NA` counts in your table
-- `miss_case_table()`: A summary table of `NA`s by case (observation)
+- `n_miss()`: Zwraca liczbę `NA` w ramce danych lub kolumnie.
+- `n_complete()`: Zwraca liczbę pełnych wartości
+- `prop_miss()` i `pct_miss()`: Proporcja lub procent wartości, które są `NA`.
+- `miss_var_summary()`: Tabela podsumowująca liczby `NA` w tabeli.
+- `miss_case_table()`: Tabela podsumowująca `NA` według przypadku (obserwacji)
 
-### n_miss( ) for `NA` counts
+### n_miss() dla zliczeń `NA
 
-Use [`n_miss()`](https://images.rdocumentation.org/packages/naniar/versions/0.4.2/topics/n_miss) to return the total `NA` count for the entire data frame, or for a specific variable (column). We use `$` to specify a single column. 
+Użyj [`n_miss()`](https://images.rdocumentation.org/packages/naniar/versions/0.4.2/topics/n_miss), aby zwrócić całkowitą liczbę `NA` dla całej ramki danych lub dla określonej zmiennej (kolumny). Używamy `$` do określenia pojedynczej kolumny.
 
-**Our data frame is pre-imported and stored as object `kp_rodents` (for Konza Prairie rodents).** 
+**Nasza ramka danych jest wstępnie zaimportowana i przechowywana jako obiekt `kp_rodents` (dla gryzoni Konza Prairie). 
 
-Run the examples below, then try the exercises to find `NA` counts for the `kp_rodents` data frame!
+Uruchom poniższe przykłady, a następnie wypróbuj ćwiczenia, aby znaleźć liczbę `NA` dla ramki danych `kp_rodents`!
 
-##### `r fa("fas fa-robot", fill = "orange")` Example 3.1
+##### `r fa("fas fa-robot", fill = "orange")` Przykład 3.1
 
-Return the total `NA` count for the entire `kp_rodents` data frame. Press 'Run' to see the outcome! 
+Zwróć całkowitą liczbę `NA` dla całej ramki danych `kp_rodents`. Naciśnij „Run”, aby zobaczyć wynik!
 
 ```{r n_miss_kp, exercise = TRUE}
 n_miss(kp_rodents)
 ```
 
-##### `r fa("fas fa-robot", fill = "orange")` Example 3.2
+##### `r fa("fas fa-robot", fill = "orange")` Przykład 3.2
 
-Return the total `NA` count only for the `weight` column. 
+Zwróć całkowitą liczbę `NA` tylko dla kolumny `weight`.
 
 ```{r n_miss_kp_weight, exercise = TRUE}
 n_miss(kp_rodents$weight)
 ```
 
-##### `r fa("fas fa-keyboard", fill = "orange")` Code exercise: n_miss( )
+##### `r fa("fas fa-keyboard", fill = "orange")` Ćwiczenie z kodem: n_miss( )
 
-Your turn! In the blank code chunk below, write code that returns the total number of `NA`s in the `age` column of `kp_rodents`. Notice that you can see the solution (but make sure to try coding it yourself manually first!). 
+Twoja kolej! W pustym fragmencie kodu poniżej napisz kod, który zwróci całkowitą liczbę `NA` w kolumnie `wiek` w `kp_rodents`. Zauważ, że możesz zobaczyć rozwiązanie (ale upewnij się, że najpierw spróbujesz zakodować je ręcznie!).
 
 ```{r exercise_na_miss_1, exercise = TRUE}
 
@@ -221,60 +222,61 @@ Your turn! In the blank code chunk below, write code that returns the total numb
 n_miss(kp_rodents$age)
 ```
 
-### n_complete( ) returns number of complete values
+### n_complete( ) zwraca liczbę kompletnych wartości
 
-The complement to `n_miss()` is `n_complete`, which returns the number of non-`NA` values in a data frame or variable. 
+Uzupełnieniem funkcji `n_miss()` jest `n_complete`, która zwraca liczbę wartości innych niż `NA` w ramce danych lub zmiennej.
 
-##### `r fa("fas fa-robot", fill = "orange")` Example 3.3
+##### `r fa("fas fa-robot", fill = "orange")` Przykład 3.3
 
-Return the number of complete (non-`NA`) values in the `hf_length` variable: 
+Zwróć liczbę pełnych (innych niż `NA`) wartości w zmiennej `hf_length`:
 
 ```{r n_complete, exercise = TRUE}
 n_complete(kp_rodents$hf_length)
 ```
 
-### prop_miss( ) returns proportion of values that are NA
+### prop_miss( ) zwraca proporcję wartości, które są NA
 
-Often, the *proportion* of missings in a data frame or column are just as (or more) important than the actual counts. Use the [`prop_miss()`](https://images.rdocumentation.org/packages/naniar/versions/0.4.2/topics/prop_miss) function to quickly find what proportion of values in a data frame or column are `NA`.
+Często *proporcja* brakujących wartości w ramce danych lub kolumnie jest tak samo (lub bardziej) ważna niż rzeczywiste zliczenia. Użyj funkcji [`prop_miss()`](https://images.rdocumentation.org/packages/naniar/versions/0.4.2/topics/prop_miss), aby szybko dowiedzieć się, jaka część wartości w ramce danych lub kolumnie to `NA`.
 
-##### `r fa("fas fa-robot", fill = "orange")` Example 3.4
+##### `r fa("fas fa-robot", fill = "orange")` Przykład 3.4
 
-Find the proportion of values that are `NA` for the entire `kp_rodents` data frame.
+Znajdź proporcję wartości `NA` dla całej ramki danych `kp_rodents`.
 
 ```{r rop_miss_1, exercise = TRUE}
 prop_miss(kp_rodents)
 ```
-So `r round(100*(prop_miss(kp_rodents)), 1)`% of all cells in `kp_rodents` contain `NA`.
 
-##### `r fa("fas fa-keyboard", fill = "orange")` Code exercise: prop_miss( )
+Tak więc `r round(100*(prop_miss(kp_rodents)), 1)`% wszystkich komórek w `kp_rodents` zawiera `NA`.
 
-What proportion of values in the `ear_length` column of `kp_rodents` are `NA`?
+##### `r fa("fas fa-keyboard", fill = "orange")` Ćwiczenie z kodem: prop_miss( )
+
+Jaka część wartości w kolumnie `ear_length` w `kp_rodents` to `NA`?
 
 ```{r prop_miss_2, exercise = TRUE}
 
 ```
 
 <div id="prop_miss_2-hint">
-**Hint:** Use '$' to refer to a single column from a data frame.
+**Wskazówka:** Użyj „$”, aby odnieść się do pojedynczej kolumny z ramki danych.
 </div>
 
-### miss_var_summary( ) for a summary table of NA counts and percents
+### miss_var_summary( ) dla tabeli podsumowującej zliczenia i procenty NA
 
-The previous functions we used to get missing counts returned a single value for `NA` count. But that would be tedious to do individually for each variable, especially with a large data frame. 
+Poprzednie funkcje, których używaliśmy do uzyskania brakujących liczb, zwracały pojedynczą wartość dla liczby `NA`. Byłoby to jednak żmudne do wykonania indywidualnie dla każdej zmiennej, zwłaszcza w przypadku dużej ramki danych. 
 
-The [`miss_var_summary()`](https://images.rdocumentation.org/packages/naniar/versions/0.5.0/topics/miss_var_summary) function in `naniar` returns a nice summary table containing the number of `NA`s and percent missing for each variable, and sorts them from highest to lowest missingness. Let's try it out.
+Funkcja [`miss_var_summary()`](https://images.rdocumentation.org/packages/naniar/versions/0.5.0/topics/miss_var_summary) w `naniar` zwraca ładną tabelę podsumowującą zawierającą liczbę brakujących `NA` i procent dla każdej zmiennej i sortuje je od największej do najmniejszej brakującej wartości. Wypróbujmy to.
 
-##### `r fa("fas fa-robot", fill = "orange")` Example 3.5
+##### `r fa("fas fa-robot", fill = "orange")` Przykład 3.5
 
-Use `miss_var_summary()` to create a summary table of missingness for all variables.
+Użyj funkcji `miss_var_summary()`, aby utworzyć tabelę podsumowującą braki dla wszystkich zmiennych.
 
 ```{r miss_var_summary_1, exercise = TRUE}
 miss_var_summary(kp_rodents)
 ```
 
-Another really cool thing about `miss_var_summary()` is that it also works with grouped data. For example, what if we wanted to break down the missingness report not just by variable, but also by rodent species. To do that, we can use `dplyr::group_by()` to indicate we want to group by the different levels in the `common_name` variable, *then* pipe into `miss_var_summary()`. 
+Kolejną naprawdę fajną rzeczą w funkcji `miss_var_summary()` jest to, że działa ona również z danymi pogrupowanymi. Na przykład, co by było, gdybyśmy chcieli podzielić raport brakujących danych nie tylko według zmiennej, ale także według gatunku gryzonia. Aby to zrobić, możemy użyć `dplyr::group_by()`, aby wskazać, że chcemy pogrupować według różnych poziomów w zmiennej `common_name`, *a następnie* pipe do `miss_var_summary()`.
 
-##### `r fa("fas fa-robot", fill = "orange")` Example 3.6
+##### `r fa("fas fa-robot", fill = "orange")` Przykład 3.6
 
 ```{r miss_var_summary_gp1, exercise = TRUE}
 kp_rodents %>% 
@@ -282,11 +284,12 @@ kp_rodents %>%
   miss_var_summary()
 
 ```
-We can see that now the missingness is reported by species *and* variable! But you can group by whatever variable you want.
 
-##### `r fa("fas fa-keyboard", fill = "orange")` Code exercise: miss_var_summary( ) with grouped data
+Widzimy, że teraz brak jest raportowany według gatunku *i* zmiennej! Można jednak grupować według dowolnej zmiennej.
 
-Write code that summarizes missing counts and percentages in `kp_rodents` for all variables, grouped by `age`.
+##### `r fa("fas fa-keyboard", fill = "orange")` Ćwiczenie: miss_var_summary( ) z pogrupowanymi danymi
+
+Napisz kod, który podsumuje brakujące liczby i wartości procentowe w `kp_rodents` dla wszystkich zmiennych, pogrupowanych według `age`.
 
 ```{r miss_var_summary_gp2, exercise = TRUE}
 
@@ -298,74 +301,75 @@ kp_rodents %>%
   miss_var_summary()
 ```
 
-### miss_case_table( ) returns a summary table of missing counts by row
+### miss_case_table( ) zwraca tabelę podsumowującą brakujące wartości według wiersza
 
-It's useful to know how many complete cases (rows with 0 missing values) exist, as well as how many observations (rows) have different counts of `NA`s. `miss_case_table` creates that for us. 
+Warto wiedzieć, ile istnieje kompletnych przypadków (wierszy z 0 brakującymi wartościami), a także ile obserwacji (wierszy) ma różne liczby `NA`. Funkcja `miss_case_table` tworzy to dla nas.  
 
-##### `r fa("fas fa-robot", fill = "orange")` Example 3.7
+##### `r fa("fas fa-robot", fill = "orange")` Przykład 3.7
 
 ```{r miss_case_table_1, exercise = TRUE}
 kp_rodents %>% 
   miss_case_table()
 
 ```
-In the summary table, we see that the number of missings per observation (row) ranges from 0 to 7. Of our 971 total observations, 408 are complete (no missing values) - that's 42.0% of observations in the data. 91 observations contain exactly 7 missing values (9.4% of observations). 
 
-Now we have some quick ways to get the counts and proportions of `NA` values in our data. It can also be really helpful to *look* at missingness. Walk a bit further into `naniar` to visualize missingness in the next section!
+W tabeli podsumowującej widzimy, że liczba braków na obserwację (wiersz) waha się od 0 do 7. Spośród 971 obserwacji 408 jest kompletnych (bez brakujących wartości) - to 42,0% obserwacji w danych. 91 obserwacji zawiera dokładnie 7 brakujących wartości (9,4% obserwacji). 
 
-## 4. Visualizing NAs
+Teraz mamy kilka szybkich sposobów na uzyskanie liczby i proporcji wartości `NA` w naszych danych. Bardzo pomocne może być również *spojrzenie* na braki. Przejdź nieco dalej do `naniar`, aby wizualizować braki w następnej sekcji!
+
+## 4. Wizualizacja NA
 
 ```{r, echo=FALSE, out.width="50%", fig.align = "center"}
 knitr::include_graphics("images/viz_na.jpg")  
 ```
 
-Data visualization is a critical part of exploratory data analysis, and should include visual exploration of missing values. It might not seem intuitive how we can visualize data that *don't* exist. In this section, we'll learn two ways to visualize `NA` values using functions in `naniar`: 
+Wizualizacja danych jest kluczową częścią eksploracyjnej analizy danych i powinna obejmować wizualną eksplorację brakujących wartości. Może nie wydawać się intuicyjne, w jaki sposób możemy wizualizować dane, które *nie istnieją*. W tej sekcji poznamy dwa sposoby wizualizacji wartości `NA` przy użyciu funkcji w `naniar`: 
 
-- `vis_miss()`: Visualize locations of `NA` as a ggplot object
-- `gg_miss_fct()`: Create a heatmap of `NA` counts by group
+- `vis_miss()`: Wizualizacja lokalizacji `NA` jako obiektu ggplot
+- `gg_miss_fct()`: Tworzy mapę cieplną liczby `NA` według grupy
 
-### vis_miss( ) to visualize missing values 
+### vis_miss( ) do wizualizacji brakujących wartości 
 
-The `vis_miss()` function in `naniar` is useful for getting an overall view of *where* and *how often* `NA`s exist in our data frame. It produces a binary heatmap, with all `NA` locations in <span style="color: black; font-weight: bold;">black</span> and all non-missing values in <span style="color: gray; font-weight: bold;">gray</span>. 
+Funkcja `vis_miss()` w `naniar` jest przydatna do uzyskania ogólnego widoku *gdzie* i *jak często* `NA` występuje w naszej ramce danych. Tworzy ona binarną mapę cieplną, ze wszystkimi lokalizacjami `NA` w kolorze <span style=„color: black; font-weight: bold;”>czarnym</span> i wszystkimi wartościami bez braku w kolorze <span style=„color: gray; font-weight: bold;”>szarym</span>.
 
-Run the example code below to see the `vis_miss()` output for our `kp_rodents` data frame. 
+Uruchom poniższy przykładowy kod, aby zobaczyć wynik `vis_miss()` dla naszej ramki danych `kp_rodents`.
 
-##### `r fa("fas fa-robot", fill = "orange")` Example 4.1
+##### `r fa("fas fa-robot", fill = "orange")` Przykład 4.1
 
 ```{r vis_miss, exercise = TRUE}
 vis_miss(kp_rodents)
 ```
 
-What's shown in the visualization above? 
+Co pokazuje powyższa wizualizacja? 
 
-- Horizontal axis: the variables (columns) in our data frame, with the % `NA` for each column 
-- Vertical axis: the row position in our data frame (Row 1 is at the top, Row 971 at the bottom)
-- Black tiles (look like lines here): any value ("cell") in our data frame that is `NA`
-- Gray tiles: any value in our data frame that is NOT `NA`
-- The percentages in bottom legend are missing and non-missing % for the *entire* data frame
+- Oś pozioma: zmienne (kolumny) w naszej ramce danych, z % `NA` dla każdej kolumny. 
+- Oś pionowa: pozycja wiersza w naszej ramce danych (wiersz 1 znajduje się na górze, wiersz 971 na dole).
+- Czarne kafelki (tutaj wyglądają jak linie): każda wartość („komórka”) w naszej ramce danych, która jest `NA`.
+- Szare kafelki: każda wartość w naszej ramce danych, która NIE jest `NA`.
+- Wartości procentowe w dolnej legendzie to brakujące i niewystępujące % dla *całej* ramki danych.
 
-OK, so that's what each element is. **How is this useful?** 
+OK, więc tak wygląda każdy element. **W jaki sposób jest to przydatne? 
 
-Let's consider our data. The rodent observations are arranged chronologically. So the earliest observations (2016-07-12) are at the top, and the most recent (2018-08-03) are at the bottom. It looks like there are some time spans during which cases are complete (these look like gray bands across all variables), with interdispersed periods during which data were collected for fewer variables (more black bands across variables). It does *not* look like the missingness in observations is randomly distributed chronologically. Which should make us ask: *Why not?*
+Rozważmy nasze dane. Obserwacje gryzoni są ułożone chronologicznie. Tak więc najwcześniejsze obserwacje (2016-07-12) znajdują się na górze, a najnowsze (2018-08-03) na dole. Wygląda na to, że istnieją pewne przedziały czasowe, w których przypadki są kompletne (wyglądają jak szare paski we wszystkich zmiennych), z rozproszonymi okresami, w których dane były gromadzone dla mniejszej liczby zmiennych (więcej czarnych pasków w różnych zmiennych). To *nie* wygląda tak, jakby braki w obserwacjach były losowo rozłożone chronologicznie. Co powinno skłonić nas do zadania pytania: *Dlaczego nie?
 
-##### `r fa("brain", fill = "orange")` Critical thinking
+##### `r fa("brain", fill = "orange")` Krytyczne myślenie
 
-Brainstorm several potential explanations for the non-random temporal distribution of missingness in our Konza Prairie rodent data subset. Some things you might consider: different researchers, changes to protocols, treatments or variables excluded from this data, seasonality, etc. 
+Zastanów się nad kilkoma potencjalnymi wyjaśnieniami nielosowego czasowego rozkładu brakujących obserwacji w naszym podzbiorze danych gryzoni z Konza Prairie. Niektóre rzeczy, które można rozważyć: różni badacze, zmiany w protokołach, zabiegi lub zmienne wykluczone z tych danych, sezonowość itp.
 
-**Now, consider your own research or data sets.** How might this type of visualization help you explore and understand missingness in your own work? 
+**Zastanów się teraz nad własnymi badaniami lub zestawami danych. W jaki sposób ten rodzaj wizualizacji może pomóc ci odkryć i zrozumieć brak w twojej własnej pracy?
 
-#### Add arguments `cluster = TRUE` or `sort_miss = TRUE`
+#### Dodaj argumenty `cluster = TRUE` lub `sort_miss = TRUE`
 
-The default for `vis_miss()`, as we saw in the example above, is to reveal missingness with observations *in the order that they exist in the data frame.* Instead, we might want to cluster or sort the missings. 
+Domyślną funkcją funkcji `vis_miss()`, jak widzieliśmy w powyższym przykładzie, jest ujawnianie brakujących obserwacji *w kolejności, w jakiej występują w ramce danych.* Zamiast tego możemy chcieć grupować lub sortować brakujące obserwacje.
 
-From the `vis_miss()` documentation: 
+Z dokumentacji `vis_miss()`: 
 
-- `cluster = TRUE` will use "hierarchical clustering to arrange rows according to missingness"
-- `sort_miss = TRUE` "arranges the columns in order of missingness"
+- `cluster = TRUE` użyje „hierarchicznego grupowania, aby uporządkować wiersze według brakujących”.
+- `sort_miss = TRUE` „układa kolumny w kolejności brakujących”
 
-##### `r fa("fas fa-keyboard", fill = "orange")` Code exercise
+##### `r fa("fas fa-keyboard", fill = "orange")` Ćwiczenie z kodem
 
-Use `vis_miss()` to visualize missings in `kp_rodents`, organized by variable from most to fewest missings.  
+Użyj funkcji `vis_miss()`, aby zwizualizować braki w `kp_rodents`, uporządkowane według zmiennej od największej do najmniejszej liczby braków.
 
 ```{r vis_miss_cluster, warning = FALSE, exercise = TRUE}
 
@@ -379,39 +383,39 @@ sort = TRUE
 vis_miss(kp_rodents, sort = TRUE)
 ```
 
-### gg_miss_fct( ): heatmap of % missings by variable and group level 
+### gg_miss_fct( ): Heatmapa % braków według zmiennej i poziomu grupy 
 
-We might also want to visualize the prevalence of `NA`s by group, across different variables. The `gg_miss_fct()` function in `naniar` does it out of the box, producing a heatmap of % missing! 
+Możemy również chcieć zwizualizować częstość występowania `NA` według grupy, dla różnych zmiennych. Funkcja `gg_miss_fct()` w `naniar` robi to po wyjęciu z pudełka, tworząc mapę cieplną % braków! 
 
-See Example 4.2 below, then complete the exercises to create your own. 
+Zobacz przykład 4.2 poniżej, a następnie wykonaj ćwiczenia, aby stworzyć własną.
 
-##### `r fa("fas fa-robot", fill = "orange")` Example 4.2
+##### `r fa("fas fa-robot", fill = "orange")` Przykład 4.2
 
-Use `gg_miss_fct()` to create a heatmap of % missings across all 9 variables, split into groups by the different levels in the `age` variable (**a** = adult, **juv** = juvenile, **sa** = youth adult). 
+Użyj funkcji `gg_miss_fct()`, aby utworzyć mapę cieplną % braków we wszystkich 9 zmiennych, podzielonych na grupy według różnych poziomów zmiennej `age` (**a** = dorosły, **juv** = nieletni, **sa** = młody dorosły).
 
 ```{r gg_miss_fct_1, warning = FALSE, exercise = TRUE}
 gg_miss_fct(kp_rodents, fct = age)
 ```
 
-Cool! What can we learn from it? 
+Super! Czego możemy się z tego dowiedzieć? 
 
-We see that the other 8 variables are on the y-axis, and the four levels of our selected variable (age) are on the x-axis: three for each of our recorded age descriptions (**a**, **juv**, **sa**) and a column for any age recorded as `NA`. 
+Widzimy, że pozostałe 8 zmiennych znajduje się na osi y, a cztery poziomy naszej wybranej zmiennej (wiek) znajdują się na osi x: trzy dla każdego z naszych zarejestrowanych opisów wieku (**a**, **juv**, **sa**) oraz kolumna dla każdego wieku zarejestrowanego jako `NA`. 
 
-The tile colors indicate the % of values that are `NA` for each intersection, with the darkest violet indicating 0% missing, and the bright yellow indicating 100% missing. 
+Kolory kafelków wskazują procent wartości `NA` dla każdego przecięcia, przy czym najciemniejszy fioletowy oznacza 0% braku, a jasnożółty 100% braku.
 
-##### `r fa("brain", fill = "orange")` Critical thinking
+##### `r fa("brain", fill = "orange")` Krytyczne myślenie
 
-Consider the % missing heatmap above to answer the following:
+Rozważ powyższą mapę cieplną % brakujących danych, aby odpowiedzieć na poniższe pytania:
 
-- Generally, which two variables tend to have the highest % missingness across all rodent age groups?
-- Do adult, juvenile or youth adult rodents have the highest % of missing values for ear length? 
-- In a sentence, what do all of the yellow bars in the `NA` column mean for this data?
+- Ogólnie rzecz biorąc, które dwie zmienne mają najwyższy % brakujących wartości we wszystkich grupach wiekowych gryzoni?
+- Czy gryzonie dorosłe, młode czy młode dorosłe mają najwyższy % brakujących wartości dla długości ucha? 
+- Co oznaczają wszystkie żółte słupki w kolumnie `NA` dla tych danych?
 
-Now try an example where you create a heatmap for % missings using a different variable: `common_name`.
+Wypróbuj teraz przykład, w którym tworzysz mapę cieplną dla % braków przy użyciu innej zmiennej: `common_name`.
 
-##### `r fa("fas fa-keyboard", fill = "orange")` Code exercise
+##### `r fa("fas fa-keyboard", fill = "orange")` Ćwiczenie z kodem
 
-Use `gg_miss_fct()` to create a heatmap of % missings in `kp_rodents` by variable, grouped by species (`common_name`).
+Użyj `gg_miss_fct()`, aby utworzyć mapę cieplną % braków w `kp_rodents` według zmiennej, pogrupowanej według gatunku (`common_name`).
 
 ```{r gg_miss_fct_2, warning = FALSE, exercise = TRUE}
 
@@ -421,66 +425,65 @@ Use `gg_miss_fct()` to create a heatmap of % missings in `kp_rodents` by variabl
 gg_miss_fct(kp_rodents, fct = common_name)
 ```
 
-##### `r fa("brain", fill = "orange")` Critical thinking
+##### `r fa("brain", fill = "orange")` Krytyczne myślenie
 
-Consider your heatmap from the code exercise above to answer the following:
+Rozważ heatmapę z powyższego ćwiczenia z kodem, aby odpowiedzieć na poniższe pytania:
 
-- Which of the four rodent species tended to have the lowest % missings, across all variables?
-- Which two variables are most often missing, across all rodent species? 
+- Który z czterech gatunków gryzoni miał najniższy % braków we wszystkich zmiennych?
+- Których dwóch zmiennych brakuje najczęściej wśród wszystkich gatunków gryzoni? 
 
-Now you have some options for initial `NA` visualization using `vis_miss()` and `gg_miss_fct()`. Frolic into the next section to discover how `NA`s intersect between variables and groups! 
+Teraz masz kilka opcji wstępnej wizualizacji `NA` przy użyciu `vis_miss()` i `gg_miss_fct()`. Przejdź do następnej sekcji, aby odkryć, jak `NA` przecinają się między zmiennymi i grupami!
 
-## 5. Explore NA intersections
+## 5. Zbadaj przekroje NA
 
-In addition to the number and percent `NA`s by group and variable, we should also explore how often they co-occur across variables. For example, we might ask: **"In how many observations were only the variables `total_length`, `tail_length` and `ear_length` missing?"**
+Oprócz liczby i procentu „NA” według grupy i zmiennej, powinniśmy również zbadać, jak często współwystępują one między zmiennymi. Na przykład możemy zapytać: **"W ilu obserwacjach brakowało tylko zmiennych `total_length`, `tail_length` i `ear_length`? ”**.
 
-In this section we'll use UpSet plots to explore `NA` intersections across variables. 
+W tej sekcji użyjemy wykresów UpSet do zbadania przecięć `NA` między zmiennymi. 
 
-### UpSet plots with `gg_miss_upset()`
+### Wykresy UpSet z funkcją `gg_miss_upset()`
 
-We can use an **UpSet plot** to visualize `NA` intersections (i.e. `NA` overlaps, or co-occurrence) across variables. 
+Możemy użyć **UpSet plot** do wizualizacji przecięć `NA` (tj. nakładania się `NA` lub współwystępowania) między zmiennymi. 
 
-An UpSet plot, despite its name, provides a delightful alternative to a Venn diagram that is much clearer for counts and large numbers of variables. It's easiest to explain an UpSet plot when we're actually looking at one, so run the code for Exercise 5.1 below, which uses the `gg_miss_upset()` function in `naniar` to create an UpSet plot of `NA` co-occurrence.
+Wykres UpSet, pomimo swojej nazwy, stanowi wspaniałą alternatywę dla diagramu Venna, który jest znacznie bardziej przejrzysty dla zliczeń i dużej liczby zmiennych. Najłatwiej jest wyjaśnić wykres UpSet, gdy faktycznie na niego patrzymy, więc uruchom poniższy kod dla ćwiczenia 5.1, który wykorzystuje funkcję `gg_miss_upset()` w `naniar`, aby utworzyć wykres UpSet współwystępowania `NA`.
 
-##### `r fa("fas fa-robot", fill = "orange")` Example 5.1
+##### `r fa("fas fa-robot", fill = "orange")` Przykład 5.1
 
-Create an UpSet plot for `NA` co-occurrence in the `kp_rodents` data frame.
+Utwórz wykres UpSet dla współwystępowania `NA` w ramce danych `kp_rodents`.
 
-*Note: the argument `nsets = 7` below increases the number of variables included to 7 (default is 5), which accomodates our number of variables that contain `NA`s (recall that we started with 9 variables, but both date and common_name are 100% complete). 
+*Uwaga: poniższy argument `nsets = 7` zwiększa liczbę uwzględnionych zmiennych do 7 (domyślnie jest to 5), co odpowiada naszej liczbie zmiennych zawierających `NA` (przypomnijmy, że zaczęliśmy od 9 zmiennych, ale zarówno date, jak i common_name są w 100% kompletne).
 
 ```{r gg_miss_upset_kp, exercise = TRUE}
 gg_miss_upset(kp_rodents, 
               nsets = 7)
 ```
 
-#### Try not to panic. Yes it's a lot. Let's break it down. 
+#### Postaraj się nie panikować. Tak, to dużo. Rozłóżmy to na czynniki pierwsze. 
 
-First, a general summary of our UpSet plot: 
+Najpierw ogólne podsumowanie naszej fabuły UpSet:
 
-- The horizontal black bars in the lower left indicate the number of `NA`s total for each variable, with the variable name shown to the right of the corresponding horizontal bar
-- The vertical black lines with black dots indicate the *variables between which the frequency of co-occurring `NA`s* is indicated by the vertical black bars
+- Poziome czarne paski w lewym dolnym rogu wskazują liczbę `NA` ogółem dla każdej zmiennej, z nazwą zmiennej pokazaną po prawej stronie odpowiedniego poziomego paska
+- Pionowe czarne linie z czarnymi kropkami wskazują *zmienne, między którymi częstotliwość współwystępowania `NA` jest wskazywana przez pionowe czarne paski.
 
-Still a lot. Here's an example to sink your teeth into: 
+Wciąż dużo. Oto przykład, w który warto się zagłębić:
 
-Let's consider the 4th vertical black column (frequency = 54). We can see that below it, the dots next to 4 variables (`tail_length_NA`, `hf_length_NA`, `ear_length_NA`, and `total_length_NA`) are filled in. The bar height of 54 means that there are **54 observations (rows) in our data frame in which exactly those four variables are `NA`**.
+Rozważmy czwartą pionową czarną kolumnę (częstotliwość = 54). Widzimy, że poniżej niej kropki obok 4 zmiennych (`tail_length_NA`, `hf_length_NA`, `ear_length_NA` i `total_length_NA`) są wypełnione. Wysokość słupka wynosząca 54 oznacza, że w naszej ramce danych znajdują się **54 obserwacje (wiersze), w których dokładnie te cztery zmienne mają wartość `NA`**.
 
-##### `r fa("brain", fill = "orange")` Critical thinking
+##### `r fa("brain", fill = "orange")` Krytyczne myślenie
 
-Answer the following questions based on the UpSet plot created in Example 5.1:
+Odpowiedz na poniższe pytania na podstawie wykresu UpSet utworzonego w przykładzie 5.1:
 
-- In how many observations (rows) of `kp_rodents` are **only** `weight`, `ear_length` and `total_length` missing? 
-- How many observations are **only** missing `total_length`?
+- W ilu obserwacjach (wierszach) `kp_rodents` brakuje **tylko** `weight`, `ear_length` i `total_length`? 
+- W ilu obserwacjach brakuje **tylko** `total_length`?
 
+`gg_miss_upset()` zapewnia dość niskokodowy sposób znajdowania przecięć `NA` między zmiennymi! 
 
-`gg_miss_upset()` provides a pretty low-code way to find `NA` intersections across variables! 
+*Przejdź do następnej sekcji, aby zbadać relacje między `NA` a wartościami innej zmiennej!
 
-*Advance to the next section explore relationships between your `NA`s and values for another variable!* 
+## 6. Zależności między NA a innymi NA
 
-## 6. Missing relationships
+Do tej pory zbadaliśmy brakujące liczby, proporcje i przecięcia, ale nie mamy jasnego poczucia, w jaki sposób `NA` w jednej zmiennej może być rozłożone na **wartości** innej zmiennej. 
 
-So far we have explored missing counts, proportions and intersections, but we don't have a clear sense of how `NA`s in one variable might be distributed across **values** of another variable. 
-
-In this section, we'll just explore our observations for the white-footed mouse. They are stored as object **wf_mouse**. The first 5 lines of the white-footed mouse subset (n = `r kp_counts$n[2]`) are shown below: 
+W tej sekcji zbadamy tylko nasze obserwacje dla myszy białonogiej. Są one przechowywane jako obiekt **wf_mouse**. Pierwsze 5 wierszy podzbioru myszy białonogiej (n = `r kp_counts$n[2]`) pokazano poniżej:
 
 ```{r, echo = FALSE}
 wf_mouse %>% 
@@ -490,8 +493,7 @@ wf_mouse %>%
                 bootstrap_options = "striped")
 ```
 
-
-The code below creates a ggplot of white-footed mouse `tail_length` versus `total_length`. You should **also notice** the warning message returned above the graph: "## Warning: Removed 182 rows containing missing values (geom_point)." 
+Poniższy kod tworzy wykres ggplot długości ogona myszy białej w stosunku do całkowitej długości ogona. Powinieneś **również zauważyć** komunikat ostrzegawczy zwrócony nad wykresem: „## Warning: Usunięto 182 wiersze zawierające brakujące wartości (geom_point).”
 
 ```{r, echo = TRUE}
 ggplot(data = wf_mouse, aes(x = tail_length, y = total_length)) +
@@ -499,17 +501,17 @@ ggplot(data = wf_mouse, aes(x = tail_length, y = total_length)) +
   theme_minimal()
 ```
 
-That warning message gives us a hint about what's missing from this graph: from the `r kp_counts$n[2]` white-footed mouse observations, 182 of them have `NA` values for `total_length`, `weight`, or both. That leaves us with 131 points on the graph above. 
+Ten komunikat ostrzegawczy daje nam wskazówkę na temat tego, czego brakuje na tym wykresie: z `r kp_counts$n[2]` obserwacji myszy o białych stopach, 182 z nich mają wartości `NA` dla `total_length`, `weight` lub obu. Pozostaje nam 131 punktów na powyższym wykresie. 
 
-Our question for this section is: **For which existing values of `total_length` and `tail_length` is the other variable `NA`?**
+Nasze pytanie w tej sekcji brzmi: **Dla jakich istniejących wartości `total_length` i `tail_length` druga zmienna ma wartość `NA`?
 
-### geom_miss_point( ) to reveal hidden NAs
+### geom_miss_point( ) aby ujawnić ukryte NA
 
-The `geom_miss_point()` function in `naniar` allows us to visualize the location of missing values in ggplot2. Run the exercise below to see what `geom_miss_point()` returns.
+Funkcja `geom_miss_point()` w `naniar` pozwala nam wizualizować lokalizację brakujących wartości w ggplot2. Wykonaj poniższe ćwiczenie, aby zobaczyć, co zwraca funkcja `geom_miss_point()`.
 
-##### `r fa("fas fa-robot", fill = "orange")` Example 6.1
+##### `r fa("fas fa-robot", fill = "orange")` Przykład 6.1
 
-Add `geom_miss_point()` to the base ggplot to see values of white-footed mouse `tail_length` have an associated `NA` for `total_length`, and vice-versa. 
+Dodaj `geom_miss_point()` do bazowego ggplot, aby zobaczyć, że wartości `tail_length` dla myszy o białych stopach mają powiązane `NA` dla `total_length` i odwrotnie.
 
 ```{r geom_miss_point_1, exercise = TRUE}
 ggplot(data = wf_mouse, aes(x = tail_length, y = total_length)) + 
@@ -519,26 +521,31 @@ ggplot(data = wf_mouse, aes(x = tail_length, y = total_length)) +
   theme_minimal()
 ```
 
-**Hmmmm. What am I looking at?**
+**Hmmmm. Na co ja patrzę?
 
-- <span style="color: #008280; font-weight: bold;">Teal dots</span> in the graph above indicate the 131 observations where there are existing values for both variables (in this case, `tail_length` and `total_length`) 
+- <span style="color: #008280; font-weight: bold;">Zielone kropki</span> na powyższym wykresie wskazują 131 obserwacji, w których istnieją wartości dla obu zmiennych (w tym przypadku `tail_length` i `total_length`). 
 
-- <span style="color: #ff7a12; font-weight: bold;">Orange dots</span> indicate our observations for which at least *one variable* is `NA`. Orange dots along the axes indicate an observed value for that axis variable for which the other variable in that observation is `NA`; the perfect diagonal line of orange dots represent observations for which both variables are `NA`.  
+- <span style="color: #ff7a12; font-weight: bold;">Pomarańczowe kropki</span> wskazują nasze obserwacje, dla których co najmniej *jedna zmienna* to `NA`. Pomarańczowe kropki wzdłuż osi wskazują zaobserwowaną wartość zmiennej osi, dla której druga zmienna w tej obserwacji wynosi `NA`; idealna ukośna linia pomarańczowych kropek reprezentuje obserwacje, dla których obie zmienne wynoszą `NA`.
 
-**Breaking it down further for this example:**
 
-First, notice that there are no vertically arranged orange dots along the `total_length` axis. That means that there are *no* rows for the white-footed mice subset where `total_length` has an existing value, but `tail_length` is `NA`. If there *were* any observations of white-footed mice that did have a value for `total_length`, but `NA` for `tail_length`, an <span style="color: #ff7a12; font-weight: bold;">orange dot</span> would be shown along the y-axis indicating the value of `total_length` for which `tail_length` was `NA`. 
+**Rozkładając to dalej dla tego przykładu:**.
 
-Next, let's take a look at the <span style="color: #ff7a12; font-weight: bold;">orange dots</span> along the horizontal axis. These indicate existing values of `tail_length` for which `total_length` in that observation (row) is `NA`. Looking at the distribution of `NA` values, we should ask: 
+Po pierwsze, zauważ, że nie ma pionowo ułożonych pomarańczowych kropek wzdłuż osi `total_length`. Oznacza to, że nie ma *żadnych* wierszy dla podzbioru myszy białonogich, gdzie `total_length` ma istniejącą wartość, ale `tail_length` jest `NA`. Jeśli *były* jakiekolwiek obserwacje myszy białonogich, które miały wartość dla `total_length`, ale `NA` dla `tail_length`, <span style="color: #ff7a12; font-weight: bold;">pomarańczowa kropka</span> byłaby pokazana wzdłuż osi y wskazując wartość `total_length` dla której `tail_length` było `NA`.
 
-**Does it appear that `NA`s for `total_length` are equally likely across all values of `tail_length`? Or does it look like the probability of `total_length` being missing differs based on the observed value for `tail_length`?**
 
-Visually, it looks (in this example) like `total_length` missingness is similarly likely across all values of `tail_length` - i.e. the *value of `tail_length` does not appear to influence missingness in `total_length`*. That is important because it can help us think about *mechanisms of data missingness*. If the probability of missingness of one variable depends on the value or outcome of *another observed variable* in the data, those missings might be **Missing at Random** - which, if unaccounted for in analyses that use listwise deletion, can bias parameter estimates. 
-Let's consider another example. 
+Następnie przyjrzyjmy się <span style="color: #ff7a12; font-weight: bold;">pomarańczowym kropkom</span> wzdłuż osi poziomej. Wskazują one istniejące wartości `tail_length`, dla których `total_length` w danej obserwacji (wierszu) wynosi `NA`. Patrząc na rozkład wartości `NA`, powinniśmy zapytać: 
 
-##### `r fa("fas fa-robot", fill = "orange")` Example 6.2
+**Czy wygląda na to, że `NA` dla `total_length` jest równie prawdopodobne dla wszystkich wartości `tail_length`? Czy też wygląda na to, że prawdopodobieństwo braku `total_length` różni się w zależności od zaobserwowanej wartości `tail_length`?
 
-Now, let's consider another relationship: total rodent length and hind foot length. 
+
+Wizualnie wygląda to (w tym przykładzie) tak, jakby brak `total_length` był podobnie prawdopodobny dla wszystkich wartości `tail_length` - tj. *wartość `tail_length` nie wydaje się wpływać na brak w `total_length`*. Jest to ważne, ponieważ może pomóc nam myśleć o *mechanizmach braku danych*. Jeśli prawdopodobieństwo braku jednej zmiennej zależy od wartości lub wyniku *innej obserwowanej zmiennej* w danych, te braki mogą być **brakami losowymi** - które, jeśli nie zostaną uwzględnione w analizach wykorzystujących usuwanie list, mogą zniekształcać szacunki parametrów. 
+
+Rozważmy inny przykład.
+
+
+##### `r fa("fas fa-robot", fill = "orange")` Przykład 6.2
+
+Rozważmy teraz inną zależność: całkowitą długość gryzonia i długość tylnej łapy.
 
 ```{r geom_miss_point_2, exercise = TRUE}
 ggplot(data = wf_mouse, aes(x = total_length, y = hf_length)) + 
@@ -548,25 +555,25 @@ ggplot(data = wf_mouse, aes(x = total_length, y = hf_length)) +
   theme_minimal()
 ```
 
-##### `r fa("brain", fill = "orange")` Critical thinking
+##### `r fa("brain", fill = "orange")` Krytyczne myślenie
 
-Consider the output from Example 6.2 above to answer the following: 
+Rozważ dane wyjściowe z przykładu 6.2 powyżej, aby odpowiedzieć na poniższe pytania: 
 
-1. Are any observations (rows) in the white-footed mouse subset for which there **is** a value for `total_length`, but `hf_length` is `NA`?
+1. Czy są jakieś obserwacje (wiersze) w podzbiorze myszy o białych stopach, dla których **jest** wartość dla `total_length`, ale `hf_length` jest `NA`?
 
-2. Are there observations in the white-footed mouse subset that are missing both `hf_length` *and* `total_length`? If yes, where are they on the graph? 
+2. Czy w podzbiorze myszy białonogich są obserwacje, w których brakuje zarówno `hf_length` *i* `total_length`? Jeśli tak, to gdzie znajdują się one na wykresie? 
 
-3. Are there observations in the white-footed mouse subset for which hind foot length was recorded, but total length is missing? 
+3. Czy w podzbiorze myszy białonogich są obserwacje, dla których zarejestrowano długość tylnej łapy, ale brakuje długości całkowitej?
 
-4. Does it appear that missingness of total length is equally likely across all observed values of hind foot length, or does it *look* (in this cursory exploration) like the value of hind foot length might impact the likelihood of total length being recorded? 
+4. Czy wydaje się, że brak całkowitej długości jest równie prawdopodobny dla wszystkich obserwowanych wartości długości tylnej stopy, czy też *wygląda* (w tym pobieżnym badaniu), że wartość długości tylnej stopy może wpływać na prawdopodobieństwo zarejestrowania całkowitej długości? 
 
-**Note:** This is not a diagnosis of the mechanism of missingness. However, this might inspire further digging, analysis and exploration that can help to decide how to deal with `NA`s. 
+**Uwaga:** Nie jest to diagnoza mechanizmu brakujących danych. Może to jednak zainspirować do dalszych poszukiwań, analiz i badań, które mogą pomóc w podjęciu decyzji, jak radzić sobie z `NA`.
 
-### Explore missing relationships for multiple groups
+### Badanie brakujących relacji dla wielu grup
 
-In the examples above, we learned to use `geom_miss_point()` to explore missing relationships for a single group. We **could** create three other subsets manually, one for each species, and do the same thing. *Or* we can add `facet_wrap()` to automatically create a graph of missing values for each group, based on a variable of our choosing. 
+W powyższych przykładach nauczyliśmy się używać funkcji `geom_miss_point()`, aby zbadać brakujące relacje dla pojedynczej grupy. Moglibyśmy utworzyć trzy inne podzbiory ręcznie, po jednym dla każdego gatunku, i zrobić to samo. *Możemy też dodać funkcję `facet_wrap()`, aby automatycznie utworzyć wykres brakujących wartości dla każdej grupy, w oparciu o wybraną przez nas zmienną. 
 
-First, let's return to the full **kp_rodents** data frame and look at the relationship between tail length and weight for all four rodent species: 
+Najpierw powróćmy do pełnej ramki danych **kp_rodents** i przyjrzyjmy się zależności między długością ogona a wagą dla wszystkich czterech gatunków gryzoni:
 
 ```{r, echo = TRUE}
 ggplot(data = kp_rodents, aes(x = tail_length, y = weight)) +
@@ -575,11 +582,11 @@ ggplot(data = kp_rodents, aes(x = tail_length, y = weight)) +
   theme_minimal()
 ```
 
-From the output, we see that 338 total observations (rows) are removed due to missing tail length, weight, or both. Let's explore those further using `geom_miss_point`. 
+Z danych wyjściowych widzimy, że 338 obserwacji (wierszy) zostało usuniętych z powodu brakującej długości ogona, wagi lub obu. Zbadajmy je dalej za pomocą `geom_miss_point`.
 
-##### `r fa("fas fa-robot", fill = "orange")` Example 6.3
+##### `r fa("fas fa-robot", fill = "orange")` Przykład 6.3
 
-Create a scatterplot that shows hidden missing values in a graph of tail length versus weight for all four rodent species in the same panel. 
+Utwórz wykres rozrzutu, który pokazuje ukryte brakujące wartości na wykresie długości ogona w zależności od masy ciała dla wszystkich czterech gatunków gryzoni w tym samym panelu.
 
 ```{r geom_miss_pt_ex3, exercise = TRUE}
 ggplot(data = kp_rodents, aes(x = tail_length, y = weight)) +
@@ -589,26 +596,26 @@ ggplot(data = kp_rodents, aes(x = tail_length, y = weight)) +
   theme_minimal()
 ```
 
-Answer the following questions based on the graph for Example 6.3 above: 
+Odpowiedz na poniższe pytania na podstawie wykresu z przykładu 6.3 powyżej: 
 
-1. Are there observed values for rodent weight for which tail length is missing? Where do they show up on the graph?
+1. Czy istnieją zaobserwowane wartości wagi gryzoni, dla których brakuje długości ogona? Gdzie są one widoczne na wykresie?
 
-2. Are there observed values for rodent tail length for which weight is missing? Where do they show up on the graph? 
+2. Czy istnieją zaobserwowane wartości długości ogona gryzoni, dla których brakuje masy? Gdzie są one widoczne na wykresie? 
 
-**Answer:** Yes, to both. Breaking down the Example 6.3 graph:
+**Odpowiedź:** Tak, w obu przypadkach. Analiza wykresu z przykładu 6.3:
 
-- <span style="color: #008280; font-weight: bold;">Teal dots</span> indicate all observations for which both tail length and weight have recorded values
-- The horizontally-arranged <span style="color: #ff7a12; font-weight: bold;">orange dots</span> jittered near the x-axis indicate recorded values of `tail_length` for which the `weight` of that observation is `NA`
-- The vertically-arranged <span style="color: #ff7a12; font-weight: bold;">orange dots</span> jittered near the y-axis indicate recorded values of `weight` for which the `tail_length` of that observation is `NA`
-- The perfect diagonal <span style="color: #ff7a12; font-weight: bold;">orange dots</span> near the origin indicate observations where both `weight` and `tail_length` are `NA` 
+- <span style="color: #008280; font-weight: bold;">Czerwone kropki</span> wskazują wszystkie obserwacje, dla których zarówno długość ogona, jak i waga mają zarejestrowane wartości
+- Poziomo ułożone <span style="color: #ff7a12; font-weight: bold;">pomarańczowe kropki</span> w pobliżu osi x wskazują zarejestrowane wartości `tail_length`, dla których `weight` tej obserwacji to `NA`.
+- Pionowo ułożone <span style="color: #ff7a12; font-weight: bold;">pomarańczowe kropki</span> w pobliżu osi y wskazują zarejestrowane wartości `weight`, dla których `tail_length` tej obserwacji wynosi `NA`.
+- Idealna przekątna <span style="color: #ff7a12; font-weight: bold;">pomarańczowe kropki</span> w pobliżu początku wskazują obserwacje, w których zarówno `weight`, jak i `tail_length` wynoszą `NA`.
 
-We can also split up our graph of missing relationships by group using `facet_wrap()`! 
+Możemy również podzielić nasz wykres brakujących relacji na grupy za pomocą funkcji `facet_wrap()`!
 
-##### `r fa("fas fa-robot", fill = "orange")` Example 6.4
+##### `r fa("fas fa-robot", fill = "orange")` Przykład 6.4
 
-Split the graph above into four separate panels, one for each species, using `facet_wrap()`.
+Podziel powyższy wykres na cztery oddzielne panele, po jednym dla każdego gatunku, używając `facet_wrap()`.
 
-Notice that the **only** difference from the graph above is the added line `+ facet_wrap(~common_name, scales = "free)`. The argument `scales = "free"` allows the x- and y-axis limits to vary for each panel; if you remove that argument, all panels will have the same axis extents. 
+Zauważ, że **jedyną** różnicą w stosunku do powyższego wykresu jest dodana linia `+ facet_wrap(~common_name, scales = „free)`. Argument `scales = „free”` pozwala limitom osi x i y różnić się dla każdego panelu; jeśli usuniesz ten argument, wszystkie panele będą miały takie same zakresy osi.
 
 ```{r geom_miss_pt_ex4, exercise = TRUE}
 ggplot(data = kp_rodents, aes(x = tail_length, y = weight)) +
@@ -619,11 +626,11 @@ ggplot(data = kp_rodents, aes(x = tail_length, y = weight)) +
   facet_wrap(~common_name, scales = "free")
 ```
 
-Next, try it on your own! In the following exercises, explore the existing and `NA` values for two different variables in the `kp_rodents` data. 
+Następnie spróbuj sam! W poniższych ćwiczeniach zbadaj istniejące i `NA` wartości dla dwóch różnych zmiennych w danych `kp_rodents`.
 
-##### `r fa("fas fa-keyboard", fill = "orange")` Code exercise
+##### `r fa("fas fa-keyboard", fill = "orange")` Ćwiczenie z kodem
 
-The following is a scatterplot of total length versus weight for cotton rats (a subset of the `kp_rodents` data, stored as `cotton_rat`):
+Poniżej znajduje się wykres rozrzutu całkowitej długości w stosunku do wagi dla szczurów bawełnianych (podzbiór danych `kp_rodents`, przechowywany jako `cotton_rat`):
 
 ```{r}
 ggplot(data = cotton_rat, aes(x = total_length, y = weight)) +
@@ -631,9 +638,9 @@ ggplot(data = cotton_rat, aes(x = total_length, y = weight)) +
   theme_minimal()
 ```
 
-How many observations (rows) are removed for which weight, total length, or both are missing? 
+Ile obserwacji (wierszy) zostało usuniętych, dla których brakuje wagi, całkowitej długości lub obu? 
 
-Build on the code for the graph above to add in the hidden observations using `geom_miss_point()`. Write and run your code below!
+Rozbuduj kod powyższego wykresu, aby dodać ukryte obserwacje za pomocą funkcji `geom_miss_point()`. Napisz i uruchom swój kod poniżej!
 
 ```{r geom_miss_point_5, exercise = TRUE}
 
@@ -643,126 +650,64 @@ Build on the code for the graph above to add in the hidden observations using `g
 ggplot(data = cotton_rat, aes(x = total_length, y = weight)) +
   geom_point() +
   geom_miss_point() +
-  scale_color_manual(values = c("darkorange", "cyan4")) # Optional for custom colors
+  scale_color_manual(values = c("darkorange", "cyan4")) # Opcjonalnie dla niestandardowych kolorów
 ```
 
-##### `r fa("brain", fill = "orange")` Critical thinking
+##### `r fa("brain", fill = "orange")` Krytyczne myślenie
 
-Answer the following about your graph of cotton rat missingness for the total length and weight observations:
+Odpowiedz na poniższe pytania dotyczące wykresu braku szczurów bawełnianych dla obserwacji całkowitej długości i wagi:
 
-- What do the teal dots represent?
-- What do the orange dots represent? 
-- Are there any cotton rat observations where total length is recorded, but weight is `NA`?
+- Co reprezentują punkty w kolorze turkusowym?
+- Co reprezentują pomarańczowe kropki? 
+- Czy są jakieś obserwacje szczurów bawełnianych, w których całkowita długość jest zarejestrowana, ale waga jest `NA`?
 
-In summary, `geom_miss_point()` allows us to explore "hidden" missing observations that were removed because one of the variables is `NA`, and may give insight into whether the missingness of one variable is related to the *value* of another.
-
-
-
-## 7. Keep exploring
-
-Let's return to the question posed in the introduction: **"How do we explore observations that don't exist?"** Hopefully your answer after this brief tutorial is: **"Well, a bunch of different ways!"** 
-
-### Functions in this tutorial
-
-In this tutorial, we used functions to count and visualize `NA`s from the `naniar` package: 
-
-- `n_miss()`: returns `NA` frequency in your data frame or column
-- `n_complete()`: returns non-`NA` value count    
-- `prop_miss()`: returns proportion `NA`
-- `miss_var_summary()`: makes summary table of `NA` counts and proportions
-- `vis_miss()`: visualize a tile graph of missings by variable
-- `gg_miss_fct()`: make a heatmap of `NA`s by variable and group
-- `gg_miss_upset()`: explore co-occurrence of `NA`s across variables
-- `geom_miss_point()`: add locations of `NA` values along ggplot axes
-
-With these coder-friendly tools, **you're on your way to becoming a missing explorer...**
-
-### ...but there's so much more exploring to do!
-
-Here are some resources to continue in your missingness adventures. 
-
-#### Continue exploring around naniar:
-
-- Read Nick Tierney's [Getting started with naniar](http://naniar.njtierney.com/articles/getting-started-w-naniar.html)
-- [Click here](https://cran.r-project.org/web/packages/naniar/vignettes/getting-started-w-naniar.html) for more ways to explore missingness in `naniar`!
-- Read Nick and Dianne Cook's paper on [Expanding tidy data principles to facilitate missing data exploration, visualization and assessment of imputations](https://arxiv.org/abs/1809.02264)
-- See Nick's [Gallery of Missing Visualizations](http://naniar.njtierney.com/articles/naniar-visualisation.html) for more options & ideas
-
-#### Learn more about mechanisms of missingness and imputation:
-
-- Nakagawa, Shinichi (2015). Missing data: mechanisms, methods, and messages. In Gordon A. Fox et al. *(Eds.)*, *Ecological Statistics: Contemporary Theory and Application (First Edition)*. Oxford University Press.
-- van Buuren, Stef (2018). *Flexible imputation of missing data*. Chapman & Hall / CRC Press. Available online: https://stefvanbuuren.name/fimd/
-
-#### Learn about how to report missingness in your research
-
-- See [Section 12.2](https://stefvanbuuren.name/fimd/sec-reporting.html) in Stef van Buuren's book for ideas about reporting missingness
-  
-### Learn more about learnr
-
-This tutorial was made with the `learnr` package in R. See the `learnr` intro and example tutorials here: https://rstudio.github.io/learnr/
-
-## MEDS talk examples  
-
-```{r, echo=FALSE, out.width="70%", fig.align = "center"}
-knitr::include_graphics("images/bren_na.jpg")  
-```
-
-These are selected examples for Allison's 2020-05-19 talk, *How to become a missing explorer: including missingness in exploratory data analysis*, at the Bren School of Environmental Science and Management (UC Santa Barbara). 
-
-Make sure to work through the entire tutorial for more information, examples, and activities! 
-
-##### Data & packages already loaded! 
-
-- Data are pre-stored as an object (data frame) called `kp_rodents` (for all 4 species) and `cotton_rat` for just the cotton rat subset used in Example 3. See the **Meet the data** section for more details. 
-
-- All required R packages (including `naniar` and `tidyverse` packages) are already attached. 
-
-##### `r fa("fas fa-robot", fill = "orange")` MEDS Talk Example 1: gg_miss_fct()
-
-Use `gg_miss_fct()` to create a heatmap of % missings by variable and factor level. Use the argument `fct = variable_name` to specify the factor variable for which you want to explore missingness by level.  
-
-```{r gg_miss_fct_meds, exercise = TRUE}
-
-```
-
-```{r gg_miss_fct_meds-solution, warning = FALSE}
-gg_miss_fct(kp_rodents, fct = common_name)
-```
-
-Try updating the factor in your code above to a different variable, like `age` or `sex`, to see how your heatmap changes!
+Podsumowując, funkcja `geom_miss_point()` pozwala nam zbadać „ukryte” brakujące obserwacje, które zostały usunięte, ponieważ jedna ze zmiennych to `NA`, i może dać wgląd w to, czy brak jednej zmiennej jest powiązany z *wartością* innej.
 
 
-##### `r fa("fas fa-robot", fill = "orange")` MEDS Talk Example 2: gg_miss_upset()
+## 7. Kontynuuj odkrywanie NA
 
-Use `gg_miss_upset()` to create an UpSet plot of missing intersections. Use the `nsets = ` argument to specify how many variables (with missings) you want to look for intersections between. 
+Wróćmy do pytania postawionego we wstępie: **"Jak badać obserwacje, które nie istnieją? ”** Miejmy nadzieję, że twoja odpowiedź po tym krótkim tutorialu brzmi: **„Cóż, na wiele różnych sposobów!”**. 
 
-```{r gg_miss_upset_meds, exercise = TRUE}
+### Funkcje w tym samouczku
 
-```
+W tym samouczku użyliśmy funkcji do liczenia i wizualizacji `NA` z pakietu `naniar`: 
 
-```{r gg_miss_upset_meds-solution, warning = TRUE}
-gg_miss_upset(kp_rodents, nsets = 7)
-```
+- `n_miss()`: zwraca częstotliwość `NA` w ramce danych lub kolumnie
+- `n_complete()`: zwraca liczbę wartości innych niż `NA 
+- `prop_miss()`: zwraca proporcję `NA`
+- `miss_var_summary()`: tworzy tabelę podsumowującą liczby i proporcje wartości `NA
+- `vis_miss()`: wizualizuje wykres kafelkowy braków według zmiennej
+- `gg_miss_fct()`: tworzy mapę cieplną `NA` według zmiennej i grupy
+- `gg_miss_upset()`: zbadaj współwystępowanie `NA` między zmiennymi
+- `geom_miss_point()`: dodaje lokalizacje wartości `NA` wzdłuż osi ggplot
 
-##### `r fa("fas fa-robot", fill = "orange")` MEDS Talk Example 3: geom_miss_point()
+### ...ale jest o wiele więcej do odkrycia!
 
-Use `geom_miss_point()` to add hidden points to a ggplot. 
+Oto kilka zasobów, które pomogą Ci kontynuować przygodę z brakami danych NA:
 
-But first...let's remind ourselves what `ggplot2` does when one or both variables are missing (here, using a subset of data for cotton rats).
+#### Kontynuuj poznawanie naniar:
 
-```{r geom_miss_point_meds, exercise = TRUE}
-ggplot(data = cotton_rat, aes(x = tail_length, y = weight)) +
-  geom_point()
-```
+- Przeczytaj artykuł Nicka Tierneya [Getting started with naniar](http://naniar.njtierney.com/articles/getting-started-w-naniar.html)
+- [Kliknij tutaj](https://cran.r-project.org/web/packages/naniar/vignettes/getting-started-w-naniar.html), aby poznać więcej sposobów eksploracji brakujących danych w `naniar`!
+- Przeczytaj artykuł Nicka i Dianne Cook [Expanding tidy data principles to facilitate missing data exploration, visualization and assessment of imputations](https://arxiv.org/abs/1809.02264).
+- Zobacz [Galerię wizualizacji brakujących danych] Nicka (http://naniar.njtierney.com/articles/naniar-visualisation.html), aby uzyskać więcej opcji i pomysłów.
 
-```{r geom_miss_point_meds-solution, warning = FALSE}
-ggplot(data = cotton_rat, aes(x = tail_length, y = weight)) +
-  geom_point() +
-  geom_miss_point()
-```
+#### Dowiedz się więcej o mechanizmach brakujących danych i imputacji:
 
-Now, add another layer to your `ggplot` with `+ geom_miss_point()` to reveal *which observed values of one variable are `NA` for the other variable*. 
+- Nakagawa, Shinichi (2015). Brakujące dane: mechanizmy, metody i wiadomości. In Gordon A. Fox et al. *(Eds.)*, *Ecological Statistics: Contemporary Theory and Application (First Edition)*. Oxford University Press.
+- van Buuren, Stef (2018). *Elastyczna imputacja brakujących danych*. Chapman & Hall / CRC Press. Dostępne online: https://stefvanbuuren.name/fimd/
 
-##### End MEDS talk examples
+#### Dowiedz się, jak zgłaszać braki w badaniach
 
-Explore the rest of the tutorial for more! 
+- Zobacz [Sekcja 12.2](https://stefvanbuuren.name/fimd/sec-reporting.html) w książce Stefa van Buurena, aby zapoznać się z pomysłami dotyczącymi zgłaszania brakujących danych.
+
+##### Dane i pakiety są już załadowane! 
+
+- Dane są wstępnie przechowywane jako obiekt (ramka danych) o nazwie `kp_rodents` (dla wszystkich 4 gatunków) i `cotton_rat` dla podzbioru szczurów bawełnianych używanych w przykładzie 3. Więcej szczegółów znajduje się w sekcji **Poznaj dane**. 
+
+- Wszystkie wymagane pakiety R (w tym pakiety `naniar` i `tidyverse`) są już dołączone.
+
+##### Powodzenia z analizą NA!
+
+Teraz Wasza kolej! Wykonajcie skrupulatną analizę braków danych w Waszym projekcie zespołowym.
+
